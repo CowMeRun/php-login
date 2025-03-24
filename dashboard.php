@@ -4,7 +4,7 @@ session_start();
 // Include database connection
 include("connect.php");
 
-// Check if the user is logged in
+// Check if user is logged in
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header("Location: login.php");
     exit();
@@ -13,155 +13,323 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 // Get the logged-in user's username
 $username = $_SESSION['username'];
 
-// Fetch user information from the database
-$query = "SELECT course, year_level FROM users WHERE username = ?";
+// Fetch user information
+$query = "SELECT * FROM users WHERE username = ?";
 $stmt = mysqli_prepare($conn, $query);
 mysqli_stmt_bind_param($stmt, "s", $username);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
+$user_info = mysqli_fetch_assoc($result);
 
-if ($row = mysqli_fetch_assoc($result)) {
-    $course = $row['course'];
-    $year = $row['year_level'];
-} else {
-    // Handle error if the user is not found
-    echo "User not found!";
-    exit();
-}
+// Fetch announcements
+$announcements_query = "SELECT * FROM announcements ORDER BY created_at DESC LIMIT 5";
+$announcements_result = mysqli_query($conn, $announcements_query);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Student Dashboard - CSS Sit-in Monitoring System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #144c94;
+            --secondary-color: #2c6a85;
+            --accent-color: #ffd700;
+            --light-bg: #f4f6f8;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: rgb(194, 196, 199);
+            background-color: var(--light-bg);
         }
+
         .navbar {
-            background-color: #2c6a85;
-            padding: 20px;
+            background-color: var(--primary-color);
+            padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .navbar a {
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
             color: white;
             text-decoration: none;
-            margin: 0 10px;
-            font-size: larger;
+            font-size: 1.5em;
+            font-weight: bold;
         }
-        .navbar a:hover {
-            color: yellow;
+
+        .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
         }
-        .container {
+
+        .navbar-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 1.1em;
+            transition: color 0.3s;
+        }
+
+        .navbar-links a:hover {
+            color: var(--accent-color);
+        }
+
+        .main-content {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .welcome-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
-            align-items: stretch;
-            padding: 20px;
-            gap: 20px;
-            flex-wrap: nowrap;
-            height: 80vh;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+
+        .welcome-text h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        .welcome-text p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-profile img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-color);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
         .card {
             background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            width: 48%;
-            text-align: center;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .announcements-list {
+            display: flex;
             flex-direction: column;
+            gap: 15px;
+        }
+
+        .announcement-item {
+            display: flex;
             justify-content: space-between;
-            flex-grow: 1;
-            overflow: auto;
+            align-items: flex-start;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
         }
-        .card:first-child {
-            width: 25%;
+
+        .announcement-content {
+            flex: 1;
+        }
+
+        .announcement-content h4 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+
+        .announcement-content p {
+            margin: 0 0 10px 0;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .announcement-meta {
+            display: flex;
+            gap: 15px;
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .announcement-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .no-announcements {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .student-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            background-color: #f8f9fa;
             padding: 15px;
+            border-radius: 8px;
+            text-align: center;
         }
-        .profile-img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #2c6a85;
-        }   
+
+        .info-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
         @media (max-width: 768px) {
-            .container {
+            .navbar {
                 flex-direction: column;
-                align-items: center;
+                padding: 15px;
             }
-            .card {
-                width: 100%;
+
+            .navbar-links {
+                margin-top: 15px;
             }
+
+            .welcome-section {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .sessions-badge {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .sessions-empty {
+            background-color: #dc3545;
         }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <a href="#">Dashboard</a>
-        <div>
-            <a href="#">Home</a>
-            <a href="profile.php">Profile</a>
-            <a href="#">Settings</a>
-            <a href="logout.php" style="color: orange;">Logout</a>
+        <a href="#" class="navbar-brand">
+            <img src="UC logo.jpg" alt="UC Logo">
+            CSS Sit-in Monitoring System
+        </a>
+        <div class="navbar-links">
+            <a href="dashboard.php"><i class="fas fa-home"></i> Home</a>
+            <a href="profile.php"><i class="fas fa-user"></i> Profile</a>
+            <a href="history.php"><i class="fas fa-history"></i> History</a>
+            <a href="Reservation.php"><i class="fas fa-calendar-alt"></i> Reservation</a>
+            <a href="logout.php" style="color: var(--accent-color);"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
-    
-    <div class="container">
-        <div class="card">
-            <h3>Student Information</h3>
-            <img src="profile.jpg" alt="Profile Picture" class="profile-img">
-            <table class="info-table">
-                <tr><td>Name:</td><td><?php echo htmlspecialchars($_SESSION['username']); ?></td></tr>
-                <tr><td>Course:</td><td><?php echo htmlspecialchars($course); ?></td></tr>
-                <tr><td>Year:</td><td><?php echo htmlspecialchars($year); ?></td></tr>
-                <tr><td>Session:</td><td>30</td></tr>
-            </table>
-        </div>
-        <div class="card">
-            <h3>Announcements</h3>
-            <p><strong>CCS Admin | 2025-Feb-03</strong></p>
-            <p>The College of Computer Studies will open the registration of students for the Sit-in privilege starting tomorrow.</p>
-            <hr>
-            <p><strong>CCS Admin | 2024-May-08</strong></p>
-            <p>We are excited to announce the launch of our new website! 🎉</p>
-        </div>
-       
-        <div class="card">
-            <h3>University of Cebu</h3>
-            <h3>COLLEGE OF INFORMATION & COMPUTER STUDIES</h3>
-            <p><strong>LABORATORY RULES AND REGULATIONS</strong></p>
-            <p>To avoid embarrassment and maintain camaraderie with your friends and superiors at our laboratories, please observe the following:</p>
-                <p>1. Maintain silence, proper decorum, and discipline inside the laboratory. Mobile phones, walkmans and other personal pieces of equipment must be switched off.</p>
-                <p>2. Games are not allowed inside the lab. This includes computer-related games, card games and other games that may disturb the operation of the lab.</p>
-                <p>3. Surfing the Internet is allowed only with the permission of the instructor. Downloading and installing of software are strictly prohibited.</p>
-                <p>4. Getting access to other websites not related to thecourse (especially pornographic and illicit sites) is strictly prohibited.</p>
-                <p>5. Deleting computer files and changing the set-up of the computer is a major offense.</p>
-                <p>6. Observe computer time usage carefully. A fifteen-minute allowance is given for each use. Otherwise, the unit will be given to those who wish to "sit-in".</p>
-                <p>7. Observe proper decorum while inside the laboratory.</p>
-                <ul>
-                    <li>Do not get inside the lab unless the instructor is present.</li>
-                    <li>All bags, knapsacks, and the likes must be deposited at the counter.</li>
-                    <li>Follow the seating arrangement of your instructor.</li>
-                    <li>At the end of class, all software programs must be closed.</li>
-                    <li>Return all chairs to their proper places after using.</li>
-                </ul>
-                <p>8. Chewing gum, eating, drinking, smoking, and other forms of vandalism are prohibited inside the lab.</p>
-                <p>9. Anyone causing a continual disturbance will be asked to leave the lab. Acts or gestures offensive to the members of the community, including public display of physical intimacy, are not tolerated.</p>
-                <p>10. Persons exhibiting hostile or threatening behavior such as yelling, swearing, or disregarding requests made by lab personnel will be asked to leave the lab.</p>
-                <p>11. For serious offense, the lab personnel may call the Civil Security Office (CSU) for assistance.</p>
-                <p>12. Any technical problem or difficulty must be addressed to the laboratory supervisor, student assistant or instructor immediately.</p>
-            <hr>
-            <p><strong>Disciplinary Action</strong></p>
-            <li>First Offense - The Head or the Dean or OIC recommends to the Guidance Center for a suspension from classes for each offender.</li>
-            <li>Second and Subsequent Offenses - A recommendation for a heavier sanction will be endorsed to the Guidance Center.</li>
+
+    <div class="main-content">
+        <div class="welcome-section">
+            <div class="welcome-text">
+                <h1>Welcome, <?php echo htmlspecialchars($user_info['Firstname'] . ' ' . $user_info['Lastname']); ?></h1>
+                <p>Student Dashboard</p>
+            </div>
+            <div class="user-profile">
+                <img src="<?php echo !empty($user_info['PROFILE_IMG']) ? htmlspecialchars($user_info['PROFILE_IMG']) : 'images/default.jpg'; ?>" alt="Profile Picture">
+            </div>
         </div>
 
+        <div class="card">
+            <div class="student-info">
+                <div class="info-item">
+                    <div class="info-label">Course</div>
+                    <div class="info-value"><?php echo htmlspecialchars($user_info['course']); ?></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Year Level</div>
+                    <div class="info-value"><?php echo htmlspecialchars($user_info['year_level']); ?></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Sessions Remaining</div>
+                    <div class="info-value sessions-badge <?php echo $user_info['sessions_remaining'] <= 0 ? 'sessions-empty' : ''; ?>">
+                        <?php echo htmlspecialchars($user_info['sessions_remaining']); ?> sessions
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fas fa-bullhorn"></i> Announcements</h3>
+            <div class="announcements-list">
+                <?php 
+                if (is_object($announcements_result) && mysqli_num_rows($announcements_result) > 0):
+                    while($announcement = mysqli_fetch_assoc($announcements_result)): 
+                ?>
+                <div class="announcement-item">
+                    <div class="announcement-content">
+                        <h4><?php echo htmlspecialchars($announcement['title']); ?></h4>
+                        <p><?php echo htmlspecialchars($announcement['content']); ?></p>
+                        <div class="announcement-meta">
+                            <span><i class="fas fa-user"></i> <?php echo htmlspecialchars($announcement['posted_by']); ?></span>
+                            <span><i class="fas fa-clock"></i> <?php echo date('M d, Y', strtotime($announcement['created_at'])); ?></span>
+                        </div>
+                    </div>
+                </div>
+                <?php 
+                    endwhile;
+                else:
+                ?>
+                <div class="no-announcements">
+                    <p><i class="fas fa-info-circle"></i> No announcements available</p>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 </body>
 </html>

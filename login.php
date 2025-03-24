@@ -21,9 +21,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($password == $user['password']) {
             $_SESSION['loggedin'] = true;
             $_SESSION['username'] = $user['username'];
+            $_SESSION['role'] = $user['role']; // Store user role in session
 
-            // Redirect to dashboard
-            header("Location: dashboard.php");
+            // Redirect based on user role
+            if ($user['role'] === 'admin') {
+                header("Location: admin_dashboard.php");
+            } else {
+                header("Location: dashboard.php");
+            }
             exit();
         } else {
             $error_message = "Invalid username or password!";
