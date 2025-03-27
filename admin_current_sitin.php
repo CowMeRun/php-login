@@ -86,34 +86,39 @@ if (!$result) {
         }
 
         .navbar {
-            background-color: var(--primary-color);
-            padding: 15px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        background-color: var(--primary-color);
+        padding: 15px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .navbar-brand {
-            display: flex;
-            align-items: center;
-            color: white;
-            text-decoration: none;
-            font-size: 1.5em;
-            font-weight: bold;
+        display: flex;
+        align-items: center;
+        color: white;
+        text-decoration: none;
+        font-size: 1.5em;
+        font-weight: bold;
         }
 
         .navbar-brand img {
-            height: 40px;
-            margin-right: 10px;
+        height: 40px;
+        margin-right: 10px;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 20px; /* Adds spacing between links */
         }
 
         .navbar-links a {
             color: white;
             text-decoration: none;
-            margin: 0 15px;
-            font-size: 1.1em;
-            transition: color 0.3s;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
         }
 
         .navbar-links a:hover {
@@ -246,20 +251,21 @@ if (!$result) {
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <a href="#" class="navbar-brand">
-            <img src="UC logo.jpg" alt="UC Logo">
-            CSS Sit-in Monitoring System
-        </a>
-        <div class="navbar-links">
-            <a href="admin_dashboard.php"><i class="fas fa-home"></i> Home</a>
-            <a href="admin_students.php"><i class="fas fa-users"></i> Students</a>
-            <a href="admin_sitin.php"><i class="fas fa-desktop"></i> Sit-in</a>
-            <a href="admin_current_sitin.php"><i class="fas fa-clock"></i> Current Sessions</a>
-            <a href="admin_sitin_history.php"><i class="fas fa-history"></i> History</a>
-            <a href="logout.php" style="color: var(--accent-color);"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </div>
+<div class="navbar">
+    <a href="#" class="navbar-brand">
+        <img src="UC logo.jpg" alt="UC Logo">
+        CSS Sit-in Monitoring System
+    </a>
+    <div class="navbar-links">
+        <a href="admin_dashboard.php"><i class="fas fa-home"></i> Home</a>
+        <a href="admin_students.php"><i class="fas fa-users"></i> Students</a>
+        <a href="admin_sitin.php"><i class="fas fa-desktop"></i> Sit-in</a>
+        <a href="admin_current_sitin.php"><i class="fas fa-clock"></i> Current Sessions</a>
+        <a href="todays_sitin_records.php"><i class="fas fa-calendar-day"></i> View Sit-In Records</a>
+        <a href="admin_sitin_history.php"><i class="fas fa-history"></i> History</a>
+        <a href="logout.php" style="color: var(--accent-color);"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
+</div>
 
     <div class="main-content">
         <h1 class="page-title">
