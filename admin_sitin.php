@@ -48,10 +48,10 @@ $students = [];
 
 if (!empty($search)) {
     $query = "SELECT *, sessions_remaining FROM users WHERE role != 'admin' AND 
-             (username LIKE ? OR Firstname LIKE ? OR Lastname LIKE ?)";
+             (ID LIKE ? OR username LIKE ? OR Firstname LIKE ? OR Lastname LIKE ?)";
     $stmt = mysqli_prepare($conn, $query);
     $search_param = "%$search%";
-    mysqli_stmt_bind_param($stmt, "sss", $search_param, $search_param, $search_param);
+    mysqli_stmt_bind_param($stmt, "ssss", $search_param, $search_param, $search_param, $search_param);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     while ($row = mysqli_fetch_assoc($result)) {
@@ -323,6 +323,7 @@ if (!empty($search)) {
             <a href="admin_sitin.php"><i class="fas fa-desktop"></i> Sit-in</a>
             <a href="admin_current_sitin.php"><i class="fas fa-clock"></i> Current Sessions</a>
             <a href="admin_sitin_history.php"><i class="fas fa-history"></i> History</a>
+            <a href="admin_feedback.php"><i class="fas fa-comments"></i> Feedback</a>
             <a href="logout.php" style="color: var(--accent-color);"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
@@ -331,8 +332,12 @@ if (!empty($search)) {
         <div class="search-section">
             <h2><i class="fas fa-search"></i> Search Students</h2>
             <form method="GET" class="search-box">
-                <input type="text" name="search" class="search-input" placeholder="Search by ID or name..." value="<?php echo htmlspecialchars($search); ?>">
-                <button type="submit" class="search-btn"><i class="fas fa-search"></i> Search</button>
+                <input type="text" name="search" class="search-input" 
+                       placeholder="Search by ID, username, or name..." 
+                       value="<?php echo htmlspecialchars($search); ?>">
+                <button type="submit" class="search-btn">
+                    <i class="fas fa-search"></i> Search
+                </button>
             </form>
         </div>
 
@@ -352,20 +357,20 @@ if (!empty($search)) {
                         <th>Student ID</th>
                         <th>Name</th>
                         <th>Course</th>
-                        <th>Year</th>
+                        <th>Year Level</th>
                         <th>Sessions Left</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach($students as $student): ?>
+                    <?php foreach ($students as $student): ?>
                     <tr>
                         <td>
                             <img src="<?php echo !empty($student['PROFILE_IMG']) ? htmlspecialchars($student['PROFILE_IMG']) : 'images/default.jpg'; ?>" 
                                  alt="Student Photo" 
                                  class="student-avatar">
                         </td>
-                        <td><?php echo htmlspecialchars($student['username']); ?></td>
+                        <td><?php echo htmlspecialchars($student['ID']); ?></td>
                         <td><?php echo htmlspecialchars($student['Firstname'] . ' ' . $student['Lastname']); ?></td>
                         <td><?php echo htmlspecialchars($student['course']); ?></td>
                         <td><?php echo htmlspecialchars($student['year_level']); ?></td>

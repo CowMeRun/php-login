@@ -492,6 +492,7 @@ if (isset($_POST['delete_user'])) {
             <a href="admin_sitin.php"><i class="fas fa-desktop"></i> Sit-in</a>
             <a href="admin_current_sitin.php"><i class="fas fa-clock"></i> Current Sessions</a>
             <a href="admin_sitin_history.php"><i class="fas fa-history"></i> History</a>
+            <a href="admin_feedback.php"><i class="fas fa-comments"></i> Feedback</a>
             <a href="logout.php" style="color: var(--accent-color);"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>

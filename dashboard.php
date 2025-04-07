@@ -266,9 +266,10 @@ $announcements_result = mysqli_query($conn, $announcements_query);
         </a>
         <div class="navbar-links">
             <a href="dashboard.php"><i class="fas fa-home"></i> Home</a>
-            <a href="profile.php"><i class="fas fa-user"></i> Profile</a>
-            <a href="history.php"><i class="fas fa-history"></i> History</a>
-            <a href="Reservation.php"><i class="fas fa-calendar-alt"></i> Reservation</a>
+            <a href="student_profile.php"><i class="fas fa-user"></i> Profile</a>
+            <a href="student_history.php"><i class="fas fa-history"></i> History</a>
+            <a href="student_reservation.php"><i class="fas fa-calendar-check"></i> Reservation</a>
+            <a href="student_feedback.php"><i class="fas fa-comments"></i> Feedback</a>
             <a href="logout.php" style="color: var(--accent-color);"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
@@ -286,6 +287,10 @@ $announcements_result = mysqli_query($conn, $announcements_query);
 
         <div class="card">
             <div class="student-info">
+                <div class="info-item">
+                    <div class="info-label">Student ID</div>
+                    <div class="info-value"><?php echo htmlspecialchars($user_info['ID']); ?></div>
+                </div>
                 <div class="info-item">
                     <div class="info-label">Course</div>
                     <div class="info-value"><?php echo htmlspecialchars($user_info['course']); ?></div>

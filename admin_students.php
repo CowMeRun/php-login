@@ -20,7 +20,7 @@ $query = "SELECT * FROM users WHERE role != 'admin'";
 
 // Add search condition
 if (!empty($search)) {
-    $query .= " AND (username LIKE ? OR Firstname LIKE ? OR Lastname LIKE ?)";
+    $query .= " AND (ID LIKE ? OR Firstname LIKE ? OR Lastname LIKE ?)";
 }
 
 // Add course filter
@@ -91,6 +91,7 @@ while ($row = mysqli_fetch_assoc($courses_result)) {
             --secondary-color: #2c6a85;
             --accent-color: #ffd700;
             --light-bg: #f4f6f8;
+            --success-color: #28a745;
         }
 
         body {
@@ -144,63 +145,99 @@ while ($row = mysqli_fetch_assoc($courses_result)) {
         .card {
             background-color: white;
             padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
             margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
         }
 
         .filters {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             margin-bottom: 20px;
-            flex-wrap: wrap;
+            align-items: center;
         }
 
-        .search-box {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .filter-item {
-            min-width: 150px;
-        }
-
-        input[type="text"], select {
-            width: 100%;
+        .filters input[type="text"],
+        .filters select {
             padding: 8px 12px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 1em;
+            font-size: 14px;
+        }
+
+        .filters input[type="text"] {
+            width: 250px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            background-color: var(--primary-color);
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .page-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
         }
 
         .students-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             margin-top: 20px;
+            background: white;
         }
 
         .students-table th,
         .students-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
         }
 
         .students-table th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-            color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 500;
+        }
+
+        .students-table th:first-child {
+            border-top-left-radius: 10px;
+        }
+
+        .students-table th:last-child {
+            border-top-right-radius: 10px;
         }
 
         .students-table tr:hover {
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
         }
 
         .student-avatar {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
             object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .status-active {
@@ -216,49 +253,12 @@ while ($row = mysqli_fetch_assoc($courses_result)) {
             gap: 5px;
         }
 
-        .btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            color: white;
-            text-decoration: none;
-        }
-
-        .btn-view {
-            background-color: var(--primary-color);
-        }
-
-        .btn-edit {
-            background-color: #28a745;
-        }
-
-        .btn-delete {
-            background-color: #dc3545;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .page-title {
-            margin: 0 0 20px 0;
-            color: var(--primary-color);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
         @media (max-width: 768px) {
             .filters {
-                flex-direction: column;
+                flex-wrap: wrap;
             }
 
-            .search-box, .filter-item {
+            .filters input[type="text"] {
                 width: 100%;
             }
 
@@ -281,6 +281,7 @@ while ($row = mysqli_fetch_assoc($courses_result)) {
             <a href="admin_sitin.php"><i class="fas fa-desktop"></i> Sit-in</a>
             <a href="admin_current_sitin.php"><i class="fas fa-clock"></i> Current Sessions</a>
             <a href="admin_sitin_history.php"><i class="fas fa-history"></i> History</a>
+            <a href="admin_feedback.php"><i class="fas fa-comments"></i> Feedback</a>
             <a href="logout.php" style="color: var(--accent-color);"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
@@ -341,7 +342,7 @@ while ($row = mysqli_fetch_assoc($courses_result)) {
                                  alt="Student Photo" 
                                  class="student-avatar">
                         </td>
-                        <td><?php echo htmlspecialchars($student['username']); ?></td>
+                        <td><?php echo htmlspecialchars($student['ID']); ?></td>
                         <td><?php echo htmlspecialchars($student['Firstname'] . ' ' . $student['Lastname']); ?></td>
                         <td><?php echo htmlspecialchars($student['course']); ?></td>
                         <td><?php echo htmlspecialchars($student['year_level']); ?></td>

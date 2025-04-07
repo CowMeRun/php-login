@@ -4,6 +4,9 @@ session_start();
 // Include database connection
 include("connect.php");
 
+// Set timezone
+date_default_timezone_set('Asia/Manila');
+
 // Check if the user is logged in and is an admin
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true || $_SESSION['role'] !== 'admin') {
     header("Location: login.php");
@@ -50,13 +53,33 @@ if (isset($_POST['end_session'])) {
     }
 }
 
+// Handle search
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+
 // Fetch current active sit-in sessions
-$query = "SELECT s.*, u.Firstname, u.Lastname, u.PROFILE_IMG, u.course, u.year_level 
+$query = "SELECT s.*, u.Firstname, u.Lastname, u.PROFILE_IMG, u.course, u.year_level, u.ID 
           FROM sitin s 
           JOIN users u ON s.student_id = u.username 
-          WHERE s.status = 'active' 
-          ORDER BY s.date_created DESC";
-$result = mysqli_query($conn, $query);
+          WHERE s.status = 'active'";
+
+// Add search condition
+if (!empty($search)) {
+    $query .= " AND (u.ID LIKE ? OR u.Firstname LIKE ? OR u.Lastname LIKE ?)";
+}
+
+$query .= " ORDER BY s.date_created DESC";
+
+// Prepare and execute query
+$stmt = mysqli_prepare($conn, $query);
+
+// Bind parameters if they exist
+if (!empty($search)) {
+    $search_param = "%$search%";
+    mysqli_stmt_bind_param($stmt, "sss", $search_param, $search_param, $search_param);
+}
+
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 
 if (!$result) {
     die("Error fetching sessions: " . mysqli_error($conn));
@@ -76,6 +99,9 @@ if (!$result) {
             --secondary-color: #2c6a85;
             --accent-color: #ffd700;
             --light-bg: #f4f6f8;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
         }
 
         body {
@@ -122,7 +148,7 @@ if (!$result) {
 
         .main-content {
             padding: 30px;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -134,114 +160,180 @@ if (!$result) {
             gap: 10px;
         }
 
-        .sessions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+        .card {
+            background-color: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            transition: transform 0.2s;
         }
 
-        .session-card {
-            background: white;
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .search-box {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 20px;
+            border: 2px solid #e0e0e0;
             border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 1em;
+            transition: all 0.3s;
+            background-color: #f8f9fa;
         }
 
-        .student-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
+        .search-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(20, 76, 148, 0.1);
+            outline: none;
         }
 
-        .student-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
+        .search-input::placeholder {
+            color: #adb5bd;
         }
 
-        .student-details h3 {
-            margin: 0;
-            color: var(--primary-color);
+        .sessions-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
         }
 
-        .student-details p {
-            margin: 5px 0;
-            color: #666;
+        .sessions-table th,
+        .sessions-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
         }
 
-        .session-details {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-        }
-
-        .detail-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .detail-label {
-            color: #666;
-        }
-
-        .detail-value {
-            color: var(--primary-color);
+        .sessions-table th {
+            background-color: var(--primary-color);
+            color: white;
             font-weight: 500;
         }
 
+        .sessions-table th:first-child {
+            border-top-left-radius: 10px;
+        }
+
+        .sessions-table th:last-child {
+            border-top-right-radius: 10px;
+        }
+
+        .sessions-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .student-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .student-avatar:hover {
+            transform: scale(1.1);
+        }
+
         .end-session-btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #dc3545;
+            background-color: var(--danger-color);
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 8px;
-            margin-top: 15px;
-            transition: background-color 0.3s;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            font-weight: 500;
         }
 
         .end-session-btn:hover {
             background-color: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+        }
+
+        .timer {
+            font-weight: 600;
+            color: var(--primary-color);
+            background: rgba(20, 76, 148, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: inline-block;
         }
 
         .message {
-            padding: 10px;
-            border-radius: 5px;
+            padding: 15px;
+            border-radius: 10px;
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .success {
             background-color: #d4edda;
             color: #155724;
-            border: 1px solid #c3e6cb;
+            border-left: 4px solid var(--success-color);
         }
 
         .error {
             background-color: #f8d7da;
             color: #721c24;
-            border: 1px solid #f5c6cb;
+            border-left: 4px solid var(--danger-color);
         }
 
         .no-sessions {
             text-align: center;
             padding: 40px;
             background: white;
-            border-radius: 10px;
+            border-radius: 15px;
             color: #666;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
         }
 
-        .timer {
-            font-size: 1.2em;
-            font-weight: bold;
+        .no-sessions i {
+            font-size: 3em;
             color: var(--primary-color);
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .sessions-table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .search-input {
+                padding: 10px 15px;
+            }
         }
     </style>
 </head>
@@ -257,6 +349,7 @@ if (!$result) {
             <a href="admin_sitin.php"><i class="fas fa-desktop"></i> Sit-in</a>
             <a href="admin_current_sitin.php"><i class="fas fa-clock"></i> Current Sessions</a>
             <a href="admin_sitin_history.php"><i class="fas fa-history"></i> History</a>
+            <a href="admin_feedback.php"><i class="fas fa-comments"></i> Feedback</a>
             <a href="logout.php" style="color: var(--accent-color);"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
@@ -268,66 +361,76 @@ if (!$result) {
         </h1>
 
         <?php if (isset($success_message)): ?>
-            <div class="message success"><?php echo $success_message; ?></div>
+            <div class="message success">
+                <i class="fas fa-check-circle"></i>
+                <?php echo $success_message; ?>
+            </div>
         <?php endif; ?>
 
         <?php if (isset($error_message)): ?>
-            <div class="message error"><?php echo $error_message; ?></div>
+            <div class="message error">
+                <i class="fas fa-exclamation-circle"></i>
+                <?php echo $error_message; ?>
+            </div>
         <?php endif; ?>
 
-        <?php if (mysqli_num_rows($result) > 0): ?>
-            <div class="sessions-grid">
-                <?php while($session = mysqli_fetch_assoc($result)): ?>
-                    <div class="session-card">
-                        <div class="student-info">
-                            <img src="<?php echo !empty($session['PROFILE_IMG']) ? htmlspecialchars($session['PROFILE_IMG']) : 'images/default.jpg'; ?>" 
-                                 alt="Student Photo" 
-                                 class="student-avatar">
-                            <div class="student-details">
-                                <h3><?php echo htmlspecialchars($session['Firstname'] . ' ' . $session['Lastname']); ?></h3>
-                                <p><?php echo htmlspecialchars($session['course']) . ' - ' . htmlspecialchars($session['year_level']); ?></p>
-                            </div>
-                        </div>
-                        <div class="session-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Student ID:</span>
-                                <span class="detail-value"><?php echo htmlspecialchars($session['student_id']); ?></span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Purpose:</span>
-                                <span class="detail-value"><?php echo htmlspecialchars($session['purpose']); ?></span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Lab:</span>
-                                <span class="detail-value"><?php echo htmlspecialchars($session['lab']); ?></span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Start Time:</span>
-                                <span class="detail-value"><?php echo date('h:i A', strtotime($session['date_created'])); ?></span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Duration:</span>
-                                <span class="detail-value timer" id="timer-<?php echo $session['id']; ?>">
-                                    Calculating...
-                                </span>
-                            </div>
-                        </div>
-                        <form method="POST" onsubmit="return confirm('Are you sure you want to end this session?');">
-                            <input type="hidden" name="sitin_id" value="<?php echo $session['id']; ?>">
-                            <input type="hidden" name="student_id" value="<?php echo $session['student_id']; ?>">
-                            <button type="submit" name="end_session" class="end-session-btn">
-                                <i class="fas fa-stop-circle"></i> End Session
-                            </button>
-                        </form>
-                    </div>
-                <?php endwhile; ?>
-            </div>
-        <?php else: ?>
-            <div class="no-sessions">
-                <i class="fas fa-info-circle"></i>
-                <p>No active sit-in sessions at the moment.</p>
-            </div>
-        <?php endif; ?>
+        <div class="card">
+            <form method="GET" class="search-box">
+                <input type="text" name="search" class="search-input" 
+                       placeholder="🔍 Search by ID or name..." 
+                       value="<?php echo htmlspecialchars($search); ?>">
+            </form>
+
+            <?php if (mysqli_num_rows($result) > 0): ?>
+                <table class="sessions-table">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Course</th>
+                            <th>Purpose</th>
+                            <th>Lab</th>
+                            <th>Start Time</th>
+                            <th>Duration</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php while($session = mysqli_fetch_assoc($result)): ?>
+                            <tr>
+                                <td>
+                                    <img src="<?php echo !empty($session['PROFILE_IMG']) ? htmlspecialchars($session['PROFILE_IMG']) : 'images/default.jpg'; ?>" 
+                                         alt="Student Photo" 
+                                         class="student-avatar">
+                                </td>
+                                <td><?php echo htmlspecialchars($session['ID']); ?></td>
+                                <td><?php echo htmlspecialchars($session['Firstname'] . ' ' . $session['Lastname']); ?></td>
+                                <td><?php echo htmlspecialchars($session['course']); ?></td>
+                                <td><?php echo htmlspecialchars($session['purpose']); ?></td>
+                                <td><?php echo htmlspecialchars($session['lab']); ?></td>
+                                <td><?php echo date('M d, Y h:i A', strtotime($session['date_created'])); ?></td>
+                                <td class="timer" id="timer-<?php echo $session['id']; ?>">Calculating...</td>
+                                <td>
+                                    <form method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to end this session?');">
+                                        <input type="hidden" name="sitin_id" value="<?php echo $session['id']; ?>">
+                                        <input type="hidden" name="student_id" value="<?php echo $session['student_id']; ?>">
+                                        <button type="submit" name="end_session" class="end-session-btn">
+                                            <i class="fas fa-stop-circle"></i> End
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    </tbody>
+                </table>
+            <?php else: ?>
+                <div class="no-sessions">
+                    <i class="fas fa-coffee"></i>
+                    <p>No active sit-in sessions at the moment. Time for a coffee break! ☕</p>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <script>
@@ -342,7 +445,7 @@ if (!$result) {
                 const hours = Math.floor(duration / (1000 * 60 * 60));
                 const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
                 
-                timer.textContent = `${hours}h ${minutes}m`;
+                timer.textContent = `⏱️ ${hours}h ${minutes}m`;
             });
         }
 
